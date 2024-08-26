@@ -1,4 +1,13 @@
+'use client'
+
+import { useEffect } from 'react'
+import { socket } from '@/socket'
+
 export default function Page() {
+  useEffect(() => {
+    socket.connect()
+  })
+
   return (
     <>
       <ul></ul>
