@@ -1,6 +1,11 @@
 'use client'
 
-import { io } from 'socket.io-client'
+import { io, Socket } from 'socket.io-client'
+import { ClientToServerEvents, ServerToClientEvents } from './types'
 
-const ServerURL = 'http://localhost:3000'
-export const socket = io(ServerURL, { autoConnect: false })
+export const ServerPort = 3000
+const ServerURL = `http://localhost:${ServerPort}`
+export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(
+  ServerURL,
+  { autoConnect: false },
+)
