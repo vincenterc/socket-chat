@@ -1,0 +1,6 @@
+/server/build
+/server/pnpm-lock.yaml
+
+/client/.next
+/client/pnpm-lock.yaml
+/client/next-env.d.ts
