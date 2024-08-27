@@ -1,19 +1,29 @@
 import { createServer } from 'http'
 import { Server } from 'socket.io'
+import {
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData,
+} from './types.js'
 
 const ClientURL = 'http://localhost:3001'
 
 const server = createServer()
-export const io = new Server(server, {
+export const io = new Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+>(server, {
   cors: {
     origin: ClientURL,
   },
 })
 
 io.on('connection', (socket) => {
-  console.log('a user connected')
-  socket.on('disconnect', () => {
-    console.log('user disconnected')
+  socket.on('chat message', (msg) => {
+    console.log('message: ' + msg)
   })
 })
 

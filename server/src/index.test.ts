@@ -20,16 +20,10 @@ describe('socket-chat-server', () => {
     clientSocket.disconnect()
   })
 
-  it('On connection', async () => {
+  it('Receive chat message', async () => {
     clientSocket.connect()
+    clientSocket.emit('chat message', 'hello')
     await wait(1)
-    expect(consoleMock).toHaveBeenCalledWith('a user connected')
-  })
-
-  it('On disconnection', async () => {
-    clientSocket.connect()
-    clientSocket.disconnect()
-    await wait(1)
-    expect(consoleMock).toHaveBeenCalledWith('user disconnected')
+    expect(consoleMock).toHaveBeenLastCalledWith('message: hello')
   })
 })
