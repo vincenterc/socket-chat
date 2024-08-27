@@ -7,23 +7,34 @@ const wait = (second: number) =>
   new Promise((resolve) => setTimeout(resolve, second * 1000))
 
 describe('socket-chat-server', () => {
-  let clientSocket: ClientSocket
+  let clientSocket1: ClientSocket, clientSocket2: ClientSocket
   const consoleMock = vi
     .spyOn(console, 'log')
     .mockImplementation(() => undefined)
 
   beforeAll(() => {
-    clientSocket = ioc(`http://localhost:${port}`, { autoConnect: false })
+    clientSocket1 = ioc(`http://localhost:${port}`, { autoConnect: false })
+    clientSocket2 = ioc(`http://localhost:${port}`, { autoConnect: false })
   })
 
   afterAll(() => {
-    clientSocket.disconnect()
+    clientSocket1.disconnect()
+    clientSocket2.disconnect()
   })
 
-  it('Receive chat message', async () => {
-    clientSocket.connect()
-    clientSocket.emit('chat message', 'hello')
-    await wait(1)
-    expect(consoleMock).toHaveBeenLastCalledWith('message: hello')
+  it('Receive and emit chat messages', async () => {
+    clientSocket1.connect()
+    clientSocket2.connect()
+    clientSocket1.emit('chat message', 'hello')
+
+    const p1 = new Promise((resolve) => {
+      clientSocket1.on('chat message', resolve)
+    })
+    const p2 = new Promise((resolve) => {
+      clientSocket2.on('chat message', resolve)
+    })
+    const response = await Promise.all([p1, p2])
+
+    expect(response).toStrictEqual(['hello', 'hello'])
   })
 })

@@ -2,7 +2,9 @@ export interface ClientToServerEvents {
   'chat message': (msg: string) => void
 }
 
-export interface ServerToClientEvents {}
+export interface ServerToClientEvents {
+  'chat message': (msg: string) => void
+}
 
 export interface InterServerEvents {}
 
