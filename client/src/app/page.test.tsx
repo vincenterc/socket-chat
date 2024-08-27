@@ -4,7 +4,7 @@ import { createServer } from 'http'
 import userEvent from '@testing-library/user-event'
 import { render, screen } from '@testing-library/react'
 
-import { ServerPort, socket as clientSocket } from '@/socket.js'
+import { ServerPort } from '@/socket.js'
 import HomePage from './page.js'
 
 const user = userEvent.setup()
@@ -12,33 +12,31 @@ const user = userEvent.setup()
 describe('socket-chat-client', () => {
   let io: Server, serverSocket: ServerSocket
 
-  beforeAll(
-    () =>
-      new Promise((resolve) => {
-        const httpServer = createServer()
-        io = new Server(httpServer)
-        httpServer.listen(ServerPort)
-        clientSocket.connect()
-        io.on('connection', (socket) => {
-          serverSocket = socket
-          resolve()
-        })
-      }),
-  )
+  beforeAll(() => {
+    const httpServer = createServer()
+    io = new Server(httpServer)
+    httpServer.listen(ServerPort)
+  })
 
   afterAll(() => {
     io.close()
-    clientSocket.disconnect()
   })
 
   it('Emit chat message', () => {
-    render(<HomePage />)
-    const button = screen.getByRole<HTMLButtonElement>('button')
-    const input = screen.getByRole<HTMLInputElement>('textbox')
-    input.value = 'hello'
-    user.click(button)
-    serverSocket.on('chat message', (msg) => {
-      expect(msg).toEqual('hello')
+    return new Promise(async (resolve) => {
+      io.on('connection', (socket) => {
+        socket.on('chat message', (msg) => {
+          expect(msg).toEqual('hello')
+          resolve(null)
+        })
+      })
+      render(<HomePage />)
+      const button = screen.getByRole('button')
+      const input = screen.getByRole<HTMLInputElement >('textbox')
+      await user.type(input, 'hello')
+      expect(input.value).toEqual('hello')
+      await user.click(button)
+      expect(input.value).toEqual('')
     })
   })
 })
