@@ -8,6 +8,8 @@ import { ServerPort } from '@/socket.js'
 import HomePage from './page.js'
 
 const user = userEvent.setup()
+const delay = (sec: number) =>
+  new Promise((resolve) => setTimeout(resolve, sec * 1000))
 
 describe('socket-chat-client', () => {
   let io: Server, serverSocket: ServerSocket
@@ -22,21 +24,26 @@ describe('socket-chat-client', () => {
     io.close()
   })
 
-  it('Emit chat message', () => {
-    return new Promise(async (resolve) => {
+  it('Emit and receive chat messages', async () => {
+    await new Promise(async (resolve) => {
       io.on('connection', (socket) => {
         socket.on('chat message', (msg) => {
           expect(msg).toEqual('hello')
+          io.emit('chat message', msg)
           resolve(null)
         })
       })
       render(<HomePage />)
       const button = screen.getByRole('button')
-      const input = screen.getByRole<HTMLInputElement >('textbox')
+      const input = screen.getByRole<HTMLInputElement>('textbox')
       await user.type(input, 'hello')
       expect(input.value).toEqual('hello')
       await user.click(button)
       expect(input.value).toEqual('')
     })
+    await delay(1)
+    const lis = screen.queryAllByRole<HTMLLIElement>('listitem')
+    const lastLi = lis[lis.length - 1]
+    expect(lastLi.textContent).toEqual('hello')
   })
 })

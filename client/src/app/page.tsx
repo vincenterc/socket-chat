@@ -5,9 +5,20 @@ import { socket } from '@/socket'
 
 export default function Page() {
   const [content, setContent] = useState('')
+  const [messages, setMessages] = useState<string[]>([])
 
   useEffect(() => {
     socket.connect()
+
+    const onChatMessage = (msg: string) => {
+      setMessages((prev) => [...prev, msg])
+    }
+
+    socket.on('chat message', onChatMessage)
+
+    return () => {
+      socket.off('chat message')
+    }
   })
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -23,7 +34,13 @@ export default function Page() {
 
   return (
     <>
-      <ul></ul>
+      <ul>
+        {messages.map((msg) => (
+          <li className="py-2 px-4 odd:bg-[#efefef]" key={msg}>
+            {msg}
+          </li>
+        ))}
+      </ul>
       <form
         onSubmit={handleSubmit}
         className="bg-[rgb(0,0,0,0.15)] p-1 fixed bottom-0 left-0 right-0 flex h-12 box-border backdrop-blur-[10px]"
