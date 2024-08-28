@@ -34,7 +34,7 @@ describe('socket-chat-client', () => {
         })
       })
       render(<HomePage />)
-      const button = screen.getByRole('button')
+      const button = screen.getByText('Send')
       const input = screen.getByRole<HTMLInputElement>('textbox')
       await user.type(input, 'hello')
       expect(input.value).toEqual('hello')

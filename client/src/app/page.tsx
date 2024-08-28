@@ -6,6 +6,7 @@ import { socket } from '@/socket'
 export default function Page() {
   const [content, setContent] = useState('')
   const [messages, setMessages] = useState<string[]>([])
+  const [toggleConnBtnText, setToggleConnBtnText] = useState('Disconnect')
 
   useEffect(() => {
     socket.connect()
@@ -19,7 +20,7 @@ export default function Page() {
     return () => {
       socket.off('chat message')
     }
-  })
+  }, [])
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -31,6 +32,19 @@ export default function Page() {
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) =>
     setContent(e.target.value)
+
+  const handleToggleConnBtnClick = (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+  ) => {
+    e.preventDefault()
+    if (socket.connected) {
+      setToggleConnBtnText('Connect')
+      socket.disconnect()
+    } else {
+      setToggleConnBtnText('Disconnect')
+      socket.connect()
+    }
+  }
 
   return (
     <>
@@ -53,6 +67,12 @@ export default function Page() {
         />
         <button className="bg-[#333] border-none py-0 px-4 m-1 rounded-[3px] outline-none text-[#fff]">
           Send
+        </button>
+        <button
+          onClick={handleToggleConnBtnClick}
+          className="bg-[#aaa] py-0 px-4 m-1 rounded-[3px]"
+        >
+          {toggleConnBtnText}
         </button>
       </form>
     </>
