@@ -25,6 +25,10 @@ export default function Page() {
     }
   }, [])
 
+  useEffect(() => {
+    window.scrollTo(0, document.body.scrollHeight)
+  })
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (content) {
