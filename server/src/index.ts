@@ -19,6 +19,7 @@ export const io = new Server<
   cors: {
     origin: ClientURL,
   },
+  connectionStateRecovery: {},
 })
 
 io.on('connection', (socket) => {
