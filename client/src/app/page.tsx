@@ -53,8 +53,8 @@ export default function Page() {
   return (
     <>
       <ul>
-        {messages.map((msg) => (
-          <li className="py-2 px-4 odd:bg-[#efefef]" key={msg}>
+        {messages.map((msg, i) => (
+          <li className="py-2 px-4 odd:bg-[#efefef]" key={`${msg}-${i}`}>
             {msg}
           </li>
         ))}
