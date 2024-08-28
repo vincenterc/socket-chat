@@ -12,5 +12,7 @@ export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(
     auth: {
       serverOffset: 0,
     },
+    ackTimeout: 10000,
+    retries: 3,
   },
 )

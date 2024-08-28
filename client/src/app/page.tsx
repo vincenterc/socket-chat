@@ -3,6 +3,8 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react'
 import { socket } from '@/socket'
 
+let counter = 0
+
 export default function Page() {
   const [content, setContent] = useState('')
   const [messages, setMessages] = useState<string[]>([])
@@ -26,7 +28,8 @@ export default function Page() {
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (content) {
-      socket.emit('chat message', content)
+      const clientOffset = `${socket.id}-${counter++}`
+      socket.emit('chat message', content, clientOffset)
       setContent('')
     }
   }
