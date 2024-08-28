@@ -1,10 +1,11 @@
-import { createServer } from 'http'
-import { Server } from 'socket.io'
 import { open } from 'sqlite'
 import sqlite3 from 'sqlite3'
-import { availableParallelism } from 'os'
 import cluster from 'cluster'
+import { createServer } from 'http'
+import { setupMaster, setupWorker } from '@socket.io/sticky'
 import { createAdapter, setupPrimary } from '@socket.io/cluster-adapter'
+import { availableParallelism, cpus } from 'os'
+import { Server } from 'socket.io'
 
 import {
   ClientToServerEvents,
@@ -28,30 +29,48 @@ await db.exec(`
   );
 `)
 
-const ClientURL = 'http://localhost:3005'
+const ClientURL = 'http://localhost:3001'
 export let io: Server
-// export const port = 3000
+export const port = 3000
 
 if (cluster.isPrimary) {
+  console.log(`Master ${process.pid} is running`)
+
+  const httpServer = createServer()
+
+  // setup sticky sessions
+  setupMaster(httpServer, {
+    loadBalancingMethod: 'least-connection',
+  })
+
+  // setup connections between the workers (the adapter on the primary thread)
+  setupPrimary()
+
+  httpServer.listen(port, () => {
+    console.log(`server running at http://localhost:${port}`)
+  })
+
   const numCPUS = availableParallelism()
 
   // create one worker per available core
   for (let i = 0; i < numCPUS; i++) {
-    cluster.fork({
-      PORT: 3000 + i,
-    })
+    cluster.fork({})
   }
 
-  // set up the adapter on the primary thread
-  setupPrimary()
+  cluster.on('exit', (worker) => {
+    console.log(`Worker ${worker.process.pid} died`)
+    cluster.fork()
+  })
 } else {
-  const server = createServer()
+  console.log(`Worker ${process.pid} started`)
+
+  const httpServer = createServer()
   io = new Server<
     ClientToServerEvents,
     ServerToClientEvents,
     InterServerEvents,
     SocketData
-  >(server, {
+  >(httpServer, {
     cors: {
       origin: ClientURL,
     },
@@ -59,6 +78,9 @@ if (cluster.isPrimary) {
     // set up the adapter on each worker thread
     adapter: createAdapter(),
   })
+
+  // setup connection with the primary process
+  setupWorker(io)
 
   io.on('connection', async (socket) => {
     socket.on('chat message', async (msg, clientOffset, callback) => {
@@ -100,12 +122,5 @@ if (cluster.isPrimary) {
         // something went wrong
       }
     }
-  })
-
-  // each worker will listen on a distinct port
-  const port = process.env.PORT
-
-  server.listen(port, () => {
-    console.log(`server running at http://localhost:${port}`)
   })
 }
