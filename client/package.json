@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "dev": "next dev --port 3001",
+    "dev": "next dev --port 3005",
     "build": "next build",
-    "start": "next start --port 3001",
+    "start": "next start --port 3005",
     "lint": "next lint",
     "test": "vitest"
   },
