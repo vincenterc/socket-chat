@@ -6,3 +6,6 @@
 
 # pnpm
 /pnpm-lock.yaml
+
+# database
+/chat.db

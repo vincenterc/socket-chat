@@ -3,7 +3,7 @@ export interface ClientToServerEvents {
 }
 
 export interface ServerToClientEvents {
-  'chat message': (msg: string) => void
+  'chat message': (msg: string, offset: number | undefined) => void
 }
 
 export interface InterServerEvents {}

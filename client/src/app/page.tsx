@@ -11,8 +11,9 @@ export default function Page() {
   useEffect(() => {
     socket.connect()
 
-    const onChatMessage = (msg: string) => {
+    const onChatMessage = (msg: string, serverOffset: number) => {
       setMessages((prev) => [...prev, msg])
+      socket.auth.serverOffset = serverOffset
     }
 
     socket.on('chat message', onChatMessage)

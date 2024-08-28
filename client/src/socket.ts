@@ -7,5 +7,10 @@ export const ServerPort = 3000
 const ServerURL = `http://localhost:${ServerPort}`
 export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(
   ServerURL,
-  { autoConnect: false },
+  {
+    autoConnect: false,
+    auth: {
+      serverOffset: 0,
+    },
+  },
 )
