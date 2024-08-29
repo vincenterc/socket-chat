@@ -83,6 +83,12 @@ if (cluster.isPrimary) {
   setupWorker(io)
 
   io.on('connection', async (socket) => {
+    socket.broadcast.emit('user connect', socket.id)
+
+    socket.on('disconnect', () => {
+      socket.broadcast.emit('user disconnect', socket.id)
+    })
+
     socket.on('chat message', async (msg, clientOffset, callback) => {
       let result
       try {

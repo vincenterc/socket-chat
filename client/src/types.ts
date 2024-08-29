@@ -3,5 +3,7 @@ export interface ClientToServerEvents {
 }
 
 export interface ServerToClientEvents {
+  'user connect': (socketId: string) => void
+  'user disconnect': (socketId: string) => void
   'chat message': (msg: string, serverOffset: number) => void
 }

@@ -13,14 +13,26 @@ export default function Page() {
   useEffect(() => {
     socket.connect()
 
+    const onUserConnect = (socketId: string) => {
+      setMessages((prev) => [...prev, `*(${socketId}) connected)*`])
+    }
+
+    const onUserDisconnect = (socketId: string) => {
+      setMessages((prev) => [...prev, `*(${socketId}) disconnected*`])
+    }
+
     const onChatMessage = (msg: string, serverOffset: number) => {
       setMessages((prev) => [...prev, msg])
       socket.auth.serverOffset = serverOffset
     }
 
+    socket.on('user connect', onUserConnect)
+    socket.on('user disconnect', onUserDisconnect)
     socket.on('chat message', onChatMessage)
 
     return () => {
+      socket.off('user connect')
+      socket.off('user disconnect')
       socket.off('chat message')
     }
   }, [])
