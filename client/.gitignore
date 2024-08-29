@@ -5,7 +5,8 @@
 /.next
 
 # typescript
-next-env.d.ts
+/next-env.d.ts
+/tsconfig.tsbuildinfo
 
 # pnpm
 /pnpm-lock.yaml
