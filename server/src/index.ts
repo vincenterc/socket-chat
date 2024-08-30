@@ -120,7 +120,7 @@ if (cluster.isPrimary) {
       }
 
       // include the offset with the message
-      io.emit('chat message', {
+      socket.broadcast.emit('chat message', {
         from: socket.data.username,
         msg,
         serverOffset: result.lastID,

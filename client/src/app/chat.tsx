@@ -62,6 +62,7 @@ export function Chat({ username }: Props) {
     if (content) {
       const clientOffset = `${socket.id}-${counter++}`
       socket.emit('chat message', content, clientOffset)
+      setMessages((prev) => [...prev, `(yourself): ${content}`])
       setContent('')
     }
   }
