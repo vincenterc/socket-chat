@@ -25,6 +25,7 @@ await db.exec(`
   CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     client_offset TEXT UNIQUE,
+    sender TEXT,
     content TEXT
   );
 `)
@@ -82,11 +83,20 @@ if (cluster.isPrimary) {
   // setup connection with the primary process
   setupWorker(io)
 
+  io.use((socket, next) => {
+    const username = socket.handshake.auth.username
+    if (!username) {
+      next(new Error('Invalid username'))
+    }
+    socket.data.username = username
+    next()
+  })
+
   io.on('connection', async (socket) => {
-    socket.broadcast.emit('user connect', socket.id)
+    socket.broadcast.emit('user connect', socket.data.username)
 
     socket.on('disconnect', () => {
-      socket.broadcast.emit('user disconnect', socket.id)
+      socket.broadcast.emit('user disconnect', socket.data.username)
     })
 
     socket.on('chat message', async (msg, clientOffset, callback) => {
@@ -94,7 +104,8 @@ if (cluster.isPrimary) {
       try {
         // store the message in the database
         result = await db.run(
-          'INSERT INTO messages (content, client_offset) VALUES (?, ?)',
+          'INSERT INTO messages (sender, content, client_offset) VALUES (?, ?, ?)',
+          socket.data.username,
           msg,
           clientOffset,
         )
@@ -109,7 +120,11 @@ if (cluster.isPrimary) {
       }
 
       // include the offset with the message
-      io.emit('chat message', msg, result.lastID)
+      io.emit('chat message', {
+        from: socket.data.username,
+        msg,
+        serverOffset: result.lastID,
+      })
       // acknowledge the event
       callback()
     })
@@ -118,10 +133,14 @@ if (cluster.isPrimary) {
       // if the connection state recovery was not successful
       try {
         await db.each(
-          'SELECT id, content FROM messages WHERE id > ?',
+          'SELECT id, sender, content FROM messages WHERE id > ?',
           [socket.handshake.auth.serverOffset || 0],
           (_err, row) => {
-            socket.emit('chat message', row.content, row.id)
+            socket.emit('chat message', {
+              from: row.sender,
+              msg: row.content,
+              serverOffset: row.id,
+            })
           },
         )
       } catch (e) {

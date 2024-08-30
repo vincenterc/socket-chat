@@ -1,3 +1,9 @@
+export interface Message {
+  from: string
+  msg: string
+  offset: number | undefined
+}
+
 export interface ClientToServerEvents {
   'chat message': (
     msg: string,
@@ -7,11 +13,13 @@ export interface ClientToServerEvents {
 }
 
 export interface ServerToClientEvents {
-  'user connect': (socketId: string) => void
-  'user disconnect': (socketId: string) => void
-  'chat message': (msg: string, offset: number | undefined) => void
+  'user connect': (username: string) => void
+  'user disconnect': (username: string) => void
+  'chat message': ({ from, msg, offset }: Message) => void
 }
 
 export interface InterServerEvents {}
 
-export interface SocketData {}
+export interface SocketData {
+  username: string
+}
