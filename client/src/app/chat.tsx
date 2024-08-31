@@ -25,7 +25,7 @@ export function Chat({ username }: Props) {
     }
 
     const onUserConnect = (username: string) => {
-      setMessages((prev) => [...prev, `*(${username}) connected)*`])
+      setMessages((prev) => [...prev, `*(${username}) connected*`])
     }
 
     const onUserDisconnect = (username: string) => {
