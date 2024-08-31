@@ -10,6 +10,7 @@ export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(
   {
     autoConnect: false,
     auth: {
+      username: '',
       serverOffset: 0,
     },
     ackTimeout: 10000,

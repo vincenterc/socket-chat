@@ -17,7 +17,7 @@ export function Chat({ username }: Props) {
   const [toggleConnBtnText, setToggleConnBtnText] = useState('Disconnect')
 
   useEffect(() => {
-    socket.auth = { username }
+    socket.auth = { ...socket.auth, username }
     socket.connect()
 
     const onConnectError = (error: Error) => {
@@ -37,7 +37,7 @@ export function Chat({ username }: Props) {
         ...prev,
         `${from === username ? '(yourself)' : from}: ${msg}`,
       ])
-      socket.auth.serverOffset = serverOffset
+      socket.auth = { ...socket.auth, serverOffset }
     }
 
     socket.on('connect_error', onConnectError)
