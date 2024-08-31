@@ -110,7 +110,7 @@ if (cluster.isPrimary) {
           clientOffset,
         )
       } catch (e) {
-        if (e.errno === 19 /* SQLITE_CONSTRAINT */) {
+        if ((e as any).errno === 19 /* SQLITE_CONSTRAINT */) {
           // the message was already inserted, so we notify the client
           callback()
         } else {
