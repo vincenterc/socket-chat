@@ -3,7 +3,6 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react'
 
 import { socket } from '@/socket'
-import { Message } from '@/types'
 
 let counter = 0
 
@@ -32,10 +31,14 @@ export function Chat({ username }: Props) {
       setMessages((prev) => [...prev, `*(${username}) disconnected*`])
     }
 
-    const onChatMessage = ({ from, msg, serverOffset }: Message) => {
+    const onChatMessage = (
+      from: string,
+      content: string,
+      serverOffset: number,
+    ) => {
       setMessages((prev) => [
         ...prev,
-        `${from === username ? '(yourself)' : from}: ${msg}`,
+        `${from === username ? '(yourself)' : from}: ${content}`,
       ])
       socket.auth = { ...socket.auth, serverOffset }
     }

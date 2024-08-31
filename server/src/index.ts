@@ -99,14 +99,14 @@ if (cluster.isPrimary) {
       socket.broadcast.emit('user disconnect', socket.data.username)
     })
 
-    socket.on('chat message', async (msg, clientOffset, callback) => {
+    socket.on('chat message', async (content, clientOffset, callback) => {
       let result
       try {
         // store the message in the database
         result = await db.run(
           'INSERT INTO messages (sender, content, client_offset) VALUES (?, ?, ?)',
           socket.data.username,
-          msg,
+          content,
           clientOffset,
         )
       } catch (e) {
@@ -120,11 +120,12 @@ if (cluster.isPrimary) {
       }
 
       // include the offset with the message
-      socket.broadcast.emit('chat message', {
-        from: socket.data.username,
-        msg,
-        serverOffset: result.lastID,
-      })
+      socket.broadcast.emit(
+        'chat message',
+        socket.data.username,
+        content,
+        result.lastID,
+      )
       // acknowledge the event
       callback()
     })
@@ -132,15 +133,11 @@ if (cluster.isPrimary) {
     if (!socket.recovered) {
       // if the connection state recovery was not successful
       try {
-        await db.each(
+        await db.each<{ id: number; sender: string; content: string }>(
           'SELECT id, sender, content FROM messages WHERE id > ?',
           [socket.handshake.auth.serverOffset || 0],
           (_err, row) => {
-            socket.emit('chat message', {
-              from: row.sender,
-              msg: row.content,
-              serverOffset: row.id,
-            })
+            socket.emit('chat message', row.sender, row.content, row.id)
           },
         )
       } catch (e) {
