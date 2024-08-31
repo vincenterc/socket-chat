@@ -4,7 +4,7 @@ import cluster from 'cluster'
 import { createServer } from 'http'
 import { setupMaster, setupWorker } from '@socket.io/sticky'
 import { createAdapter, setupPrimary } from '@socket.io/cluster-adapter'
-import { availableParallelism, cpus } from 'os'
+import { availableParallelism } from 'os'
 import { Server } from 'socket.io'
 
 import {
@@ -31,7 +31,12 @@ await db.exec(`
 `)
 
 const ClientURL = 'http://localhost:3001'
-export let io: Server
+export let io: Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+>
 export const port = 3000
 
 if (cluster.isPrimary) {
@@ -66,12 +71,7 @@ if (cluster.isPrimary) {
   console.log(`Worker ${process.pid} started`)
 
   const httpServer = createServer()
-  io = new Server<
-    ClientToServerEvents,
-    ServerToClientEvents,
-    InterServerEvents,
-    SocketData
-  >(httpServer, {
+  io = new Server(httpServer, {
     cors: {
       origin: ClientURL,
     },

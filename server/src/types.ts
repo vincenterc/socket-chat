@@ -1,7 +1,7 @@
 export interface Message {
   from: string
   msg: string
-  offset: number | undefined
+  serverOffset: number | undefined
 }
 
 export interface ClientToServerEvents {
@@ -15,7 +15,7 @@ export interface ClientToServerEvents {
 export interface ServerToClientEvents {
   'user connect': (username: string) => void
   'user disconnect': (username: string) => void
-  'chat message': ({ from, msg, offset }: Message) => void
+  'chat message': ({ from, msg, serverOffset }: Message) => void
 }
 
 export interface InterServerEvents {}
