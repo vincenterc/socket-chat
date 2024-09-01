@@ -2,7 +2,7 @@ export interface ClientToServerEvents {
   'chat message': (
     content: string,
     clientOffset: string,
-    callback: () => void,
+    callback: (serverOffset: number) => void,
   ) => void
 }
 
@@ -20,4 +20,5 @@ export interface InterServerEvents {}
 
 export interface SocketData {
   username: string
+  serverOffset: number
 }

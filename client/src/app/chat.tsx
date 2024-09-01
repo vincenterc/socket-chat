@@ -3,8 +3,18 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react'
 
 import { socket } from '@/socket'
+import { generatedId } from '@/lib/utils'
 
 let counter = 0
+const getId = (function () {
+  let id = ''
+  return function () {
+    if (!id) {
+      id = generatedId(20)
+    }
+    return id
+  }
+})()
 
 interface Props {
   username: string
@@ -63,8 +73,17 @@ export function Chat({ username }: Props) {
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (content) {
-      const clientOffset = `${socket.id}-${counter++}`
-      socket.emit('chat message', content, clientOffset)
+      const socketId = socket.id || getId()
+      const clientOffset = `${socketId}-${counter++}`
+      socket.emit(
+        'chat message',
+        content,
+        clientOffset,
+        // ackTimeout set up in the config
+        (_err, serverOffset) => {
+          socket.auth = { ...socket.auth, serverOffset }
+        },
+      )
       setMessages((prev) => [...prev, `(yourself): ${content}`])
       setContent('')
     }

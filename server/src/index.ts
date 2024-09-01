@@ -93,6 +93,7 @@ if (cluster.isPrimary) {
   })
 
   io.on('connection', async (socket) => {
+    socket.data.serverOffset = socket.handshake.auth.serverOffset
     socket.broadcast.emit('user connect', socket.data.username)
 
     socket.on('disconnect', () => {
@@ -112,7 +113,11 @@ if (cluster.isPrimary) {
       } catch (e) {
         if ((e as any).errno === 19 /* SQLITE_CONSTRAINT */) {
           // the message was already inserted, so we notify the client
-          callback()
+          callback(
+            result?.lastID === undefined
+              ? socket.data.serverOffset
+              : result.lastID,
+          )
         } else {
           // nothing to do, just let the client retry
         }
@@ -127,7 +132,9 @@ if (cluster.isPrimary) {
         result.lastID,
       )
       // acknowledge the event
-      callback()
+      callback(
+        result.lastID === undefined ? socket.data.serverOffset : result.lastID,
+      )
     })
 
     if (!socket.recovered) {
@@ -135,7 +142,7 @@ if (cluster.isPrimary) {
       try {
         await db.each<{ id: number; sender: string; content: string }>(
           'SELECT id, sender, content FROM messages WHERE id > ?',
-          [socket.handshake.auth.serverOffset || 0],
+          [socket.data.serverOffset || 0],
           (_err, row) => {
             socket.emit('chat message', row.sender, row.content, row.id)
           },

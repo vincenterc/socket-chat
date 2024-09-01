@@ -1,5 +1,9 @@
 export interface ClientToServerEvents {
-  'chat message': (content: string, clientOffset: string) => void
+  'chat message': (
+    content: string,
+    clientOffset: string,
+    callback: (err: Error, serverOffset: number) => void,
+  ) => void
 }
 
 export interface ServerToClientEvents {
