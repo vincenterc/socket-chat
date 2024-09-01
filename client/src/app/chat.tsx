@@ -20,7 +20,7 @@ export function Chat({ username }: Props) {
     socket.connect()
 
     const onConnectError = (error: Error) => {
-      alert(error.message)
+      console.error(error.message)
     }
 
     const onUserConnect = (username: string) => {
