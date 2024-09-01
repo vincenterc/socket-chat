@@ -4,6 +4,16 @@ export interface ClientToServerEvents {
     clientOffset: string,
     callback: (serverOffset: number) => void,
   ) => void
+  typing: (
+    {
+      username,
+      isTyping,
+    }: {
+      username: string
+      isTyping: boolean
+    },
+    callback: () => void,
+  ) => void
 }
 
 export interface ServerToClientEvents {
@@ -14,6 +24,13 @@ export interface ServerToClientEvents {
     content: string,
     serverOffset: number | undefined,
   ) => void
+  typing: ({
+    username,
+    isTyping,
+  }: {
+    username: string
+    isTyping: boolean
+  }) => void
 }
 
 export interface InterServerEvents {}

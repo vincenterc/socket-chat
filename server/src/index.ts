@@ -137,6 +137,11 @@ if (cluster.isPrimary) {
       )
     })
 
+    socket.on('typing', ({ username, isTyping }, callback) => {
+      socket.broadcast.emit('typing', { username, isTyping })
+      callback()
+    })
+
     if (!socket.recovered) {
       // if the connection state recovery was not successful
       try {

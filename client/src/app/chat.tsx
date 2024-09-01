@@ -6,6 +6,7 @@ import { socket } from '@/socket'
 import { generatedId } from '@/lib/utils'
 
 let counter = 0
+let isTyping = false
 const getId = (function () {
   let id = ''
   return function () {
@@ -24,6 +25,7 @@ export function Chat({ username }: Props) {
   const [content, setContent] = useState('')
   const [messages, setMessages] = useState<string[]>([])
   const [toggleConnBtnText, setToggleConnBtnText] = useState('Disconnect')
+  const [typings, setTypings] = useState<string[]>([])
 
   useEffect(() => {
     socket.auth = { ...socket.auth, username }
@@ -53,22 +55,48 @@ export function Chat({ username }: Props) {
       socket.auth = { ...socket.auth, serverOffset }
     }
 
+    const onTyping = ({
+      username,
+      isTyping,
+    }: {
+      username: string
+      isTyping: boolean
+    }) => {
+      if (isTyping) {
+        setTypings((prev) => [...prev, username])
+      } else {
+        setTypings((prev) => prev.filter((u) => u !== username))
+      }
+    }
+
     socket.on('connect_error', onConnectError)
     socket.on('user connect', onUserConnect)
     socket.on('user disconnect', onUserDisconnect)
     socket.on('chat message', onChatMessage)
+    socket.on('typing', onTyping)
 
     return () => {
       socket.off('connect_error')
       socket.off('user connect')
       socket.off('user disconnect')
       socket.off('chat message')
+      socket.off('typing', onTyping)
     }
   }, [username])
 
   useEffect(() => {
     window.scrollTo(0, document.body.scrollHeight)
   })
+
+  useEffect(() => {
+    if (!isTyping && content !== '') {
+      isTyping = true
+      socket.emit('typing', { username, isTyping: true })
+    } else if (isTyping && content === '') {
+      isTyping = false
+      socket.emit('typing', { username, isTyping: false })
+    }
+  }, [username, content])
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -112,6 +140,12 @@ export function Chat({ username }: Props) {
           <li className="py-2 px-4 odd:bg-[#efefef]" key={`${msg}-${i}`}>
             {msg}
           </li>
+        ))}
+        {typings.map((username, i) => (
+          <p
+            key={`${username}-${i}`}
+            className="py-2 px-4 text-gray-400"
+          >{`${username} is typing`}</p>
         ))}
       </ul>
       <form
