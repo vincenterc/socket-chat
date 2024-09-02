@@ -45,6 +45,12 @@ export function Chat({ username }: Props) {
     const onUserDisconnect = (username: string) => {
       setUsers((prev) => prev.filter((u) => u !== username))
       setMessages((prev) => [...prev, `*(${username}) disconnected*`])
+      if (
+        typings.length !== 0 &&
+        typings.findIndex((u) => u === username) !== -1
+      ) {
+        setTypings((prev) => prev.filter((u) => u !== username))
+      }
     }
 
     const onUsers = (users: string[]) => setUsers(users)
@@ -90,7 +96,7 @@ export function Chat({ username }: Props) {
       socket.off('chat message')
       socket.off('typing', onTyping)
     }
-  }, [username])
+  }, [typings, username])
 
   useEffect(() => {
     msgListRef.current?.scrollTo(0, msgListRef.current.scrollHeight)
