@@ -19,6 +19,7 @@ export interface ClientToServerEvents {
 export interface ServerToClientEvents {
   'user connect': (username: string) => void
   'user disconnect': (username: string) => void
+  users: (users: string[]) => void
   'chat message': (
     from: string,
     content: string,
@@ -33,7 +34,10 @@ export interface ServerToClientEvents {
   }) => void
 }
 
-export interface InterServerEvents {}
+export interface InterServerEvents {
+  'user connect': (username: string) => void
+  'user disconnect': (username: string) => void
+}
 
 export interface SocketData {
   username: string

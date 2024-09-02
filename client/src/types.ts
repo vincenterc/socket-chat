@@ -16,6 +16,7 @@ export interface ClientToServerEvents {
 export interface ServerToClientEvents {
   'user connect': (username: string) => void
   'user disconnect': (username: string) => void
+  users: (users: string[]) => void
   'chat message': (from: string, content: string, serverOffset: number) => void
   typing: ({
     username,

@@ -38,6 +38,7 @@ export let io: Server<
   SocketData
 >
 export const port = 3000
+const users: string[] = []
 
 if (cluster.isPrimary) {
   console.log(`Master ${process.pid} is running`)
@@ -94,9 +95,18 @@ if (cluster.isPrimary) {
 
   io.on('connection', async (socket) => {
     socket.data.serverOffset = socket.handshake.auth.serverOffset
+
+    io.serverSideEmit('user connect', socket.data.username)
     socket.broadcast.emit('user connect', socket.data.username)
+    users.push(socket.data.username)
+    socket.emit('users', users)
 
     socket.on('disconnect', () => {
+      const index = users.findIndex((u) => u === socket.data.username)
+      if (index !== -1) {
+        users.splice(index, 1)
+      }
+      io.serverSideEmit('user disconnect', socket.data.username)
       socket.broadcast.emit('user disconnect', socket.data.username)
     })
 
@@ -155,6 +165,17 @@ if (cluster.isPrimary) {
       } catch (e) {
         // something went wrong
       }
+    }
+  })
+
+  io.on('user connect', (username: string) => {
+    users.push(username)
+  })
+
+  io.on('user disconnect', (username: string) => {
+    const index = users.findIndex((u) => u === username)
+    if (index !== -1) {
+      users.splice(index, 1)
     }
   })
 }
