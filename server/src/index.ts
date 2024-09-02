@@ -14,23 +14,6 @@ import {
   SocketData,
 } from './types.js'
 
-// open the database file
-const db = await open({
-  filename: 'chat.db',
-  driver: sqlite3.Database,
-})
-
-// create a 'message' table
-await db.exec(`
-  CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    client_offset TEXT UNIQUE,
-    sender TEXT,
-    content TEXT
-  );
-`)
-
-const ClientURL = 'http://localhost:3001'
 export let io: Server<
   ClientToServerEvents,
   ServerToClientEvents,
@@ -38,7 +21,6 @@ export let io: Server<
   SocketData
 >
 export const port = 3000
-const users: string[] = []
 
 if (cluster.isPrimary) {
   console.log(`Master ${process.pid} is running`)
@@ -71,6 +53,25 @@ if (cluster.isPrimary) {
 } else {
   console.log(`Worker ${process.pid} started`)
 
+  // open the database file
+  const db = await open({
+    filename: 'chat.db',
+    driver: sqlite3.Database,
+  })
+
+  // create a 'message' table
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_offset TEXT UNIQUE,
+      sender TEXT,
+      content TEXT
+    );
+  `)
+
+  const users: string[] = []
+
+  const ClientURL = 'http://localhost:3001'
   const httpServer = createServer()
   io = new Server(httpServer, {
     cors: {
