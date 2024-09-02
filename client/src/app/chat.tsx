@@ -100,7 +100,7 @@ export function Chat({ username }: Props) {
 
   useEffect(() => {
     msgListRef.current?.scrollTo(0, msgListRef.current.scrollHeight)
-  })
+  }, [messages, typings])
 
   useEffect(() => {
     if (!isTyping && content !== '') {
