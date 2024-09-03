@@ -1,9 +1,11 @@
 'use client'
 
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 import { socket } from '@/socket'
 import { generatedId } from '@/lib/utils'
+import { Message } from '@/types'
 
 let counter = 0
 let isTyping = false
@@ -24,9 +26,10 @@ interface Props {
 export function Chat({ username }: Props) {
   const [users, setUsers] = useState<string[]>([])
   const [content, setContent] = useState('')
-  const [messages, setMessages] = useState<string[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
   const [toggleConnBtnText, setToggleConnBtnText] = useState('Disconnect')
   const [typings, setTypings] = useState<string[]>([])
+  const [to, setTo] = useState<string>('')
   const msgListRef = useRef<HTMLUListElement>(null)
 
   useEffect(() => {
@@ -39,12 +42,14 @@ export function Chat({ username }: Props) {
 
     const onUserConnect = (username: string) => {
       setUsers((prev) => [...prev, username])
-      setMessages((prev) => [...prev, `*(${username}) connected*`])
+      // TODO
+      // setMessages((prev) => [...prev, `*(${username}) connected*`])
     }
 
     const onUserDisconnect = (username: string) => {
       setUsers((prev) => prev.filter((u) => u !== username))
-      setMessages((prev) => [...prev, `*(${username}) disconnected*`])
+      // TODO
+      // setMessages((prev) => [...prev, `*(${username}) disconnected*`])
       if (
         typings.length !== 0 &&
         typings.findIndex((u) => u === username) !== -1
@@ -57,12 +62,13 @@ export function Chat({ username }: Props) {
 
     const onChatMessage = (
       from: string,
+      to: string,
       content: string,
       serverOffset: number,
     ) => {
       setMessages((prev) => [
         ...prev,
-        `${from === username ? '(yourself)' : from}: ${content}`,
+        { from, to, content },
       ])
       socket.auth = { ...socket.auth, serverOffset }
     }
@@ -119,6 +125,7 @@ export function Chat({ username }: Props) {
       const clientOffset = `${socketId}-${counter++}`
       socket.emit(
         'chat message',
+        to,
         content,
         clientOffset,
         // ackTimeout set up in the config
@@ -126,7 +133,7 @@ export function Chat({ username }: Props) {
           socket.auth = { ...socket.auth, serverOffset }
         },
       )
-      setMessages((prev) => [...prev, `(yourself): ${content}`])
+      setMessages((prev) => [...prev, { from: username, to, content }])
       setContent('')
     }
   }
@@ -147,31 +154,54 @@ export function Chat({ username }: Props) {
     }
   }
 
+  const handleClickUserItem = (username: string) => () => setTo(username)
+
   return (
     <div className="h-screen flex">
       <div className="grow max-w-80 p-2 flex flex-col bg-gray-800">
         <h1 className="py-2 px-4 text-white text-3xl font-bold ">{username}</h1>
         <ul className="grow overflow-y-auto">
-          {users.map(
-            (u, i) =>
-              u !== username && (
-                <li
-                  key={`${u}-${i}`}
-                  className="mt-2 py-2 px-4 bg-gray-600 rounded-2xl align-middle text-white text-xl hover:cursor-pointer hover:bg-gray-700"
-                >
-                  {u}
-                </li>
-              ),
+          {to ? (
+            <li
+              onClick={handleClickUserItem('')}
+              className="mt-2 py-2 px-4 flex items-center gap-2 bg-gray-600 rounded-2xl align-middle text-white text-xl hover:cursor-pointer hover:bg-gray-700"
+            >
+              <ArrowLeftIcon className="size-5 text-white" />
+              {to}
+            </li>
+          ) : (
+            users.map(
+              (u, i) =>
+                u !== username && (
+                  <li
+                    onClick={handleClickUserItem(u)}
+                    key={`${u}-${i}`}
+                    className="mt-2 py-2 px-4 bg-gray-600 rounded-2xl align-middle text-white text-xl hover:cursor-pointer hover:bg-gray-700"
+                  >
+                    {u}
+                  </li>
+                ),
+            )
           )}
         </ul>
       </div>
       <div className="grow-[2] relative">
         <ul ref={msgListRef} className="h-full pb-12 overflow-y-auto">
-          {messages.map((msg, i) => (
-            <li className="py-2 px-4 odd:bg-[#efefef]" key={`${msg}-${i}`}>
-              {msg}
-            </li>
-          ))}
+          {messages
+            .filter((msg) =>
+              to
+                ? (msg.from === username && msg.to === to) ||
+                  (msg.from === to && msg.to === username)
+                : msg.to === to,
+            )
+            .map((msg, i) => (
+              <li
+                className="py-2 px-4 odd:bg-[#efefef]"
+                key={`${msg.content}-${i}`}
+              >
+                {`${msg.from === username ? '(yourself)' : msg.from}: ${msg.content}`}
+              </li>
+            ))}
           {typings.map((username, i) => (
             <p
               key={`${username}-${i}`}

@@ -65,6 +65,7 @@ if (cluster.isPrimary) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       client_offset TEXT UNIQUE,
       sender TEXT,
+      receiver TEXT,
       content TEXT
     );
   `)
@@ -102,6 +103,8 @@ if (cluster.isPrimary) {
     users.push(socket.data.username)
     socket.emit('users', users)
 
+    socket.join(socket.data.username)
+
     socket.on('disconnect', () => {
       const index = users.findIndex((u) => u === socket.data.username)
       if (index !== -1) {
@@ -111,13 +114,14 @@ if (cluster.isPrimary) {
       socket.broadcast.emit('user disconnect', socket.data.username)
     })
 
-    socket.on('chat message', async (content, clientOffset, callback) => {
+    socket.on('chat message', async (to, content, clientOffset, callback) => {
       let result
       try {
         // store the message in the database
         result = await db.run(
-          'INSERT INTO messages (sender, content, client_offset) VALUES (?, ?, ?)',
+          'INSERT INTO messages (sender, receiver, content, client_offset) VALUES (?, ?, ?, ?)',
           socket.data.username,
+          to,
           content,
           clientOffset,
         )
@@ -136,12 +140,25 @@ if (cluster.isPrimary) {
       }
 
       // include the offset with the message
-      socket.broadcast.emit(
-        'chat message',
-        socket.data.username,
-        content,
-        result.lastID,
-      )
+      if (!to) {
+        socket.broadcast.emit(
+          'chat message',
+          socket.data.username,
+          to,
+          content,
+          result.lastID,
+        )
+      } else {
+        socket
+          .to(to)
+          .emit(
+            'chat message',
+            socket.data.username,
+            to,
+            content,
+            result.lastID,
+          )
+      }
       // acknowledge the event
       callback(
         result.lastID === undefined ? socket.data.serverOffset : result.lastID,
@@ -156,11 +173,26 @@ if (cluster.isPrimary) {
     if (!socket.recovered) {
       // if the connection state recovery was not successful
       try {
-        await db.each<{ id: number; sender: string; content: string }>(
-          'SELECT id, sender, content FROM messages WHERE id > ?',
-          [socket.data.serverOffset || 0],
+        await db.each<{
+          id: number
+          sender: string
+          receiver: string
+          content: string
+        }>(
+          'SELECT id, sender, receiver, content FROM messages WHERE id > ? AND (sender == ? OR receiver == "" OR receiver == ?)',
+          [
+            socket.data.serverOffset || 0,
+            socket.data.username,
+            socket.data.username,
+          ],
           (_err, row) => {
-            socket.emit('chat message', row.sender, row.content, row.id)
+            socket.emit(
+              'chat message',
+              row.sender,
+              row.receiver,
+              row.content,
+              row.id,
+            )
           },
         )
       } catch (e) {
