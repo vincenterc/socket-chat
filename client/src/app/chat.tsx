@@ -66,10 +66,7 @@ export function Chat({ username }: Props) {
       content: string,
       serverOffset: number,
     ) => {
-      setMessages((prev) => [
-        ...prev,
-        { from, to, content },
-      ])
+      setMessages((prev) => [...prev, { from, to, content }])
       socket.auth = { ...socket.auth, serverOffset }
     }
 
