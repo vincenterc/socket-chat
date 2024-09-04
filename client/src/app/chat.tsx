@@ -5,7 +5,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 import { socket } from '@/socket'
 import { generatedId } from '@/lib/utils'
-import { Message } from '@/types'
+import { Message, User } from '@/types'
 
 let counter = 0
 let isTyping = false
@@ -24,7 +24,7 @@ interface Props {
 }
 
 export function Chat({ username }: Props) {
-  const [users, setUsers] = useState<string[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const [content, setContent] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [toggleConnBtnText, setToggleConnBtnText] = useState('Disconnect')
@@ -41,13 +41,13 @@ export function Chat({ username }: Props) {
     }
 
     const onUserConnect = (username: string) => {
-      setUsers((prev) => [...prev, username])
+      setUsers((prev) => [...prev, { name: username, hasNewMessage: false }])
       // TODO
       // setMessages((prev) => [...prev, `*(${username}) connected*`])
     }
 
     const onUserDisconnect = (username: string) => {
-      setUsers((prev) => prev.filter((u) => u !== username))
+      setUsers((prev) => prev.filter((u) => u.name !== username))
       // TODO
       // setMessages((prev) => [...prev, `*(${username}) disconnected*`])
       if (
@@ -58,15 +58,21 @@ export function Chat({ username }: Props) {
       }
     }
 
-    const onUsers = (users: string[]) => setUsers(users)
+    const onUsers = (users: string[]) =>
+      setUsers(users.map((u) => ({ name: u, hasNewMessage: false })))
 
-    const onChatMessage = (
-      from: string,
-      to: string,
-      content: string,
-      serverOffset: number,
-    ) => {
-      setMessages((prev) => [...prev, { from, to, content }])
+    const onChatMessage = (msg: Message, serverOffset: number) => {
+      setMessages((prev) => [...prev, msg])
+      if (msg.to) {
+        const index = users.findIndex((u) => u.name === msg.from)
+        if (index !== -1) {
+          setUsers((prev) => [
+            ...prev.slice(0, index),
+            { ...prev[index], hasNewMessage: msg.from !== to },
+            ...prev.slice(index + 1),
+          ])
+        }
+      }
       socket.auth = { ...socket.auth, serverOffset }
     }
 
@@ -99,7 +105,7 @@ export function Chat({ username }: Props) {
       socket.off('chat message')
       socket.off('typing', onTyping)
     }
-  }, [typings, username])
+  }, [username, users, typings, to])
 
   useEffect(() => {
     msgListRef.current?.scrollTo(0, msgListRef.current.scrollHeight)
@@ -151,7 +157,19 @@ export function Chat({ username }: Props) {
     }
   }
 
-  const handleClickUserItem = (username: string) => () => setTo(username)
+  const handleClickUserItem = (username: string) => () => {
+    setTo(username)
+    if (username) {
+      const index = users.findIndex((u) => u.name === username)
+      if (index !== -1 && users[index].hasNewMessage) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.name === username ? { ...u, hasNewMessage: false } : u,
+          ),
+        )
+      }
+    }
+  }
 
   return (
     <div className="h-screen flex">
@@ -169,13 +187,16 @@ export function Chat({ username }: Props) {
           ) : (
             users.map(
               (u, i) =>
-                u !== username && (
+                u.name !== username && (
                   <li
-                    onClick={handleClickUserItem(u)}
+                    onClick={handleClickUserItem(u.name)}
                     key={`${u}-${i}`}
-                    className="mt-2 py-2 px-4 bg-gray-600 rounded-2xl align-middle text-white text-xl hover:cursor-pointer hover:bg-gray-700"
+                    className="mt-2 py-2 px-4 bg-gray-600 rounded-2xl flex justify-between items-center text-white text-xl hover:cursor-pointer hover:bg-gray-700"
                   >
-                    {u}
+                    {u.name}
+                    {u.hasNewMessage && (
+                      <div className="w-2 h-2 bg-red-600 rounded-[50%]" />
+                    )}
                   </li>
                 ),
             )

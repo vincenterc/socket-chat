@@ -143,9 +143,8 @@ if (cluster.isPrimary) {
       if (!to) {
         socket.broadcast.emit(
           'chat message',
-          socket.data.username,
-          to,
-          content,
+          { from: socket.data.username, to, content },
+
           result.lastID,
         )
       } else {
@@ -153,9 +152,7 @@ if (cluster.isPrimary) {
           .to(to)
           .emit(
             'chat message',
-            socket.data.username,
-            to,
-            content,
+            { from: socket.data.username, to, content },
             result.lastID,
           )
       }
@@ -188,9 +185,7 @@ if (cluster.isPrimary) {
           (_err, row) => {
             socket.emit(
               'chat message',
-              row.sender,
-              row.receiver,
-              row.content,
+              { from: row.sender, to: row.receiver, content: row.content },
               row.id,
             )
           },

@@ -1,3 +1,8 @@
+export interface User {
+  name: string
+  hasNewMessage: boolean
+}
+
 export interface Message {
   from: string
   to: string
@@ -24,12 +29,7 @@ export interface ServerToClientEvents {
   'user connect': (username: string) => void
   'user disconnect': (username: string) => void
   users: (users: string[]) => void
-  'chat message': (
-    from: string,
-    to: string,
-    content: string,
-    serverOffset: number,
-  ) => void
+  'chat message': ({ from, to, content }: Message, serverOffset: number) => void
   typing: ({
     username,
     isTyping,
