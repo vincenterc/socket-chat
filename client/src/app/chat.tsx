@@ -62,6 +62,7 @@ export function Chat({ username }: Props) {
 
     const onChatMessage = (msg: Message, serverOffset: number) => {
       setMessages((prev) => [...prev, msg])
+      // TODO fix display of having new messages
       if (msg.to) {
         const index = users.findIndex((u) => u.name === msg.from)
         if (index !== -1) {
