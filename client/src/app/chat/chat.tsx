@@ -1,6 +1,7 @@
 'use client'
 
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react'
+import { redirect } from 'next/navigation'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 import { socket } from '@/socket'
@@ -30,6 +31,8 @@ export function Chat() {
   const [typings, setTypings] = useState<string[]>([])
   const [to, setTo] = useState<string>('')
   const msgListRef = useRef<HTMLUListElement>(null)
+
+  if (!username) redirect('/login')
 
   useEffect(() => {
     socket.auth = { ...socket.auth, username }

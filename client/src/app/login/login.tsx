@@ -1,23 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { useUsername } from '@/component/username-provider'
 
 export function Login() {
   const [username, setUsername] = useState('')
   const auth = useUsername()
+  const router = useRouter()
+
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    auth.setUsername(username)
+    setUsername('')
+    router.push('/chat')
+  }
 
   return (
     <div className="h-screen flex justify-center items-center">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          auth.setUsername(username)
-          setUsername('')
-        }}
-        className="w-full max-w-80"
-      >
+      <form onSubmit={handleSubmit} className="w-full max-w-80">
         <div className="h-11 w-full mb-4">
           <input
             value={username}

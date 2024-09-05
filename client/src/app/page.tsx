@@ -1,12 +1,12 @@
 'use client'
 
-import { Chat } from './chat'
-import { Login } from './login'
+import { redirect } from 'next/navigation'
 
 import { useUsername } from '@/component/username-provider'
 
 export default function Page() {
   const { username } = useUsername()
 
-  return <>{username ? <Chat /> : <Login />}</>
+  if (!username) redirect('/login')
+  else redirect('/chat')
 }
