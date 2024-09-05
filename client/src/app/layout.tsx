@@ -1,4 +1,5 @@
 import { Toaster } from '@/component/toaster'
+import { UsernameProvider } from '@/component/username-provider'
 import './global.css'
 
 export default function RootLayout({
@@ -8,7 +9,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body><Toaster />{children}</body>
+      <body>
+        <Toaster />
+        <UsernameProvider>{children}</UsernameProvider>
+      </body>
     </html>
   )
 }

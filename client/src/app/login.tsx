@@ -1,20 +1,19 @@
-'user client'
+'use client'
 
-import { Dispatch, SetStateAction, useState } from 'react'
+import { useState } from 'react'
 
-interface Props {
-  login: (username: string) => void
-}
+import { useUsername } from '@/component/username-provider'
 
-export function Login({ login }: Props) {
+export function Login() {
   const [username, setUsername] = useState('')
+  const auth = useUsername()
 
   return (
     <div className="h-screen flex justify-center items-center">
       <form
         onSubmit={(e) => {
           e.preventDefault()
-          login(username)
+          auth.setUsername(username)
           setUsername('')
         }}
         className="w-full max-w-80"

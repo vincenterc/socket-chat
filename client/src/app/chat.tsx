@@ -7,6 +7,7 @@ import { socket } from '@/socket'
 import { generatedId } from '@/lib/utils'
 import { Message, User } from '@/types'
 import { toast } from '@/component/toaster'
+import { useUsername } from '@/component/username-provider'
 
 let counter = 0
 let isTyping = false
@@ -20,11 +21,8 @@ const getId = (function () {
   }
 })()
 
-interface Props {
-  username: string
-}
-
-export function Chat({ username }: Props) {
+export function Chat() {
+  const { username } = useUsername()
   const [users, setUsers] = useState<User[]>([])
   const [content, setContent] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
