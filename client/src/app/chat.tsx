@@ -6,6 +6,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { socket } from '@/socket'
 import { generatedId } from '@/lib/utils'
 import { Message, User } from '@/types'
+import { toast } from '@/component/toaster'
 
 let counter = 0
 let isTyping = false
@@ -42,14 +43,12 @@ export function Chat({ username }: Props) {
 
     const onUserConnect = (username: string) => {
       setUsers((prev) => [...prev, { name: username, hasNewMessage: false }])
-      // TODO
-      // setMessages((prev) => [...prev, `*(${username}) connected*`])
+      toast(`${username} connected`)
     }
 
     const onUserDisconnect = (username: string) => {
       setUsers((prev) => prev.filter((u) => u.name !== username))
-      // TODO
-      // setMessages((prev) => [...prev, `*(${username}) disconnected*`])
+      toast(`${username} disconnected`)
       if (
         typings.length !== 0 &&
         typings.findIndex((u) => u === username) !== -1
