@@ -60,11 +60,17 @@ export const useChat = () => {
 export function ChatProvider({ children }: { children: ReactNode }) {
   const { username } = useUsername()
   const [users, setUsers] = useState<User[]>([])
+  const [tempUsers, setTempUsers] = useState<User[]>([])
   const [typings, setTypings] = useState<string[]>([])
   const [messages, setMessages] = useState<Message[]>([])
   const [content, setContent] = useState('')
   const [toggleConnBtnText, setToggleConnBtnText] = useState('Disconnect')
   const to = (useParams().to as string) || ''
+
+  if (!to && tempUsers.length !== 0) {
+    setUsers(tempUsers)
+    setTempUsers([])
+  }
 
   useEffect(() => {
     socket.auth = { ...socket.auth, username }
@@ -80,7 +86,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
 
     const onUserDisconnect = (username: string) => {
-      setUsers((prev) => prev.filter((u) => u.name !== username))
+      if (!to) {
+        setUsers((prev) => prev.filter((u) => u.name !== username))
+      } else {
+        setTempUsers(users.filter((u) => u.name !== username))
+      }
+
       toast(`${username} disconnected`)
       if (
         typings.length !== 0 &&
