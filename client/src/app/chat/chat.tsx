@@ -1,176 +1,45 @@
 'use client'
 
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react'
-import { redirect } from 'next/navigation'
+import { useEffect, useRef } from 'react'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import Link from 'next/link'
 
-import { socket } from '@/socket'
-import { generatedId } from '@/lib/utils'
-import { Message, User } from '@/types'
-import { toast } from '@/component/toaster'
+import { useChat } from '@/component/chat-provider'
 import { useUsername } from '@/component/username-provider'
-
-let counter = 0
-let isTyping = false
-const getId = (function () {
-  let id = ''
-  return function () {
-    if (!id) {
-      id = generatedId(20)
-    }
-    return id
-  }
-})()
 
 export function Chat() {
   const { username } = useUsername()
-  const [users, setUsers] = useState<User[]>([])
-  const [content, setContent] = useState('')
-  const [messages, setMessages] = useState<Message[]>([])
-  const [toggleConnBtnText, setToggleConnBtnText] = useState('Disconnect')
-  const [typings, setTypings] = useState<string[]>([])
-  const [to, setTo] = useState<string>('')
+  const {
+    content,
+    messages,
+    users,
+    to,
+    toggleConnBtnText,
+    typings,
+    handleChange,
+    handleSubmit,
+    handleToggleConnBtnClick,
+  } = useChat()
   const msgListRef = useRef<HTMLUListElement>(null)
-
-  if (!username) redirect('/login')
-
-  useEffect(() => {
-    socket.auth = { ...socket.auth, username }
-    socket.connect()
-
-    const onConnectError = (error: Error) => {
-      console.error(error.message)
-    }
-
-    const onUserConnect = (username: string) => {
-      setUsers((prev) => [...prev, { name: username, hasNewMessage: false }])
-      toast(`${username} connected`)
-    }
-
-    const onUserDisconnect = (username: string) => {
-      setUsers((prev) => prev.filter((u) => u.name !== username))
-      toast(`${username} disconnected`)
-      if (
-        typings.length !== 0 &&
-        typings.findIndex((u) => u === username) !== -1
-      ) {
-        setTypings((prev) => prev.filter((u) => u !== username))
-      }
-    }
-
-    const onUsers = (users: string[]) =>
-      setUsers(users.map((u) => ({ name: u, hasNewMessage: false })))
-
-    const onChatMessage = (msg: Message, serverOffset: number) => {
-      setMessages((prev) => [...prev, msg])
-      // TODO fix display of having new messages
-      if (msg.to) {
-        const index = users.findIndex((u) => u.name === msg.from)
-        if (index !== -1) {
-          setUsers((prev) => [
-            ...prev.slice(0, index),
-            { ...prev[index], hasNewMessage: msg.from !== to },
-            ...prev.slice(index + 1),
-          ])
-        }
-      }
-      socket.auth = { ...socket.auth, serverOffset }
-    }
-
-    const onTyping = ({
-      username,
-      isTyping,
-    }: {
-      username: string
-      isTyping: boolean
-    }) => {
-      if (isTyping) {
-        setTypings((prev) => [...prev, username])
-      } else {
-        setTypings((prev) => prev.filter((u) => u !== username))
-      }
-    }
-
-    socket.on('connect_error', onConnectError)
-    socket.on('user connect', onUserConnect)
-    socket.on('user disconnect', onUserDisconnect)
-    socket.on('users', onUsers)
-    socket.on('chat message', onChatMessage)
-    socket.on('typing', onTyping)
-
-    return () => {
-      socket.off('connect_error')
-      socket.off('user connect')
-      socket.off('user disconnect')
-      socket.off('users')
-      socket.off('chat message')
-      socket.off('typing', onTyping)
-    }
-  }, [username, users, typings, to])
 
   useEffect(() => {
     msgListRef.current?.scrollTo(0, msgListRef.current.scrollHeight)
   }, [messages, typings])
 
-  useEffect(() => {
-    if (!isTyping && content !== '') {
-      isTyping = true
-      socket.emit('typing', { username, isTyping: true })
-    } else if (isTyping && content === '') {
-      isTyping = false
-      socket.emit('typing', { username, isTyping: false })
-    }
-  }, [username, content])
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (content) {
-      const socketId = socket.id || getId()
-      const clientOffset = `${socketId}-${counter++}`
-      socket.emit(
-        'chat message',
-        to,
-        content,
-        clientOffset,
-        // ackTimeout set up in the config
-        (_err, serverOffset) => {
-          socket.auth = { ...socket.auth, serverOffset }
-        },
-      )
-      setMessages((prev) => [...prev, { from: username, to, content }])
-      setContent('')
-    }
-  }
-
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) =>
-    setContent(e.target.value)
-
-  const handleToggleConnBtnClick = (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-  ) => {
-    e.preventDefault()
-    if (socket.connected) {
-      setToggleConnBtnText('Connect')
-      socket.disconnect()
-    } else {
-      setToggleConnBtnText('Disconnect')
-      socket.connect()
-    }
-  }
-
-  const handleClickUserItem = (username: string) => () => {
-    setTo(username)
-    if (username) {
-      const index = users.findIndex((u) => u.name === username)
-      if (index !== -1 && users[index].hasNewMessage) {
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.name === username ? { ...u, hasNewMessage: false } : u,
-          ),
-        )
-      }
-    }
-  }
+  // TODO not display having new messages
+  // const handleClickUserItem = (username: string) => () => {
+  //   setTo(username)
+  //   if (username) {
+  //     const index = users.findIndex((u) => u.name === username)
+  //     if (index !== -1 && users[index].hasNewMessage) {
+  //       setUsers((prev) =>
+  //         prev.map((u) =>
+  //           u.name === username ? { ...u, hasNewMessage: false } : u,
+  //         ),
+  //       )
+  //     }
+  //   }
+  // }
 
   return (
     <div className="h-screen flex">
@@ -178,26 +47,29 @@ export function Chat() {
         <h1 className="py-2 px-4 text-white text-3xl font-bold ">{username}</h1>
         <ul className="grow overflow-y-auto">
           {to ? (
-            <li
-              onClick={handleClickUserItem('')}
-              className="mt-2 py-2 px-4 flex items-center gap-2 bg-gray-600 rounded-2xl align-middle text-white text-xl hover:cursor-pointer hover:bg-gray-700"
-            >
-              <ArrowLeftIcon className="size-5 text-white" />
-              {to}
+            <li>
+              <Link
+                href="/chat"
+                className="mt-2 py-2 px-4 flex items-center gap-2 bg-gray-600 rounded-2xl align-middle text-white text-xl hover:cursor-pointer hover:bg-gray-700"
+              >
+                <ArrowLeftIcon className="size-5 text-white" />
+                {to}
+              </Link>
             </li>
           ) : (
             users.map(
               (u, i) =>
                 u.name !== username && (
-                  <li
-                    onClick={handleClickUserItem(u.name)}
-                    key={`${u}-${i}`}
-                    className="mt-2 py-2 px-4 bg-gray-600 rounded-2xl flex justify-between items-center text-white text-xl hover:cursor-pointer hover:bg-gray-700"
-                  >
-                    {u.name}
-                    {u.hasNewMessage && (
-                      <div className="w-2 h-2 bg-red-600 rounded-[50%]" />
-                    )}
+                  <li key={`${u}-${i}`}>
+                    <Link
+                      href={`/chat/${u.name}`}
+                      className="mt-2 py-2 px-4 bg-gray-600 rounded-2xl flex justify-between items-center text-white text-xl hover:cursor-pointer hover:bg-gray-700"
+                    >
+                      {u.name}
+                      {u.hasNewMessage && (
+                        <div className="w-2 h-2 bg-red-600 rounded-[50%]" />
+                      )}
+                    </Link>
                   </li>
                 ),
             )
