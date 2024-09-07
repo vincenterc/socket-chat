@@ -38,6 +38,7 @@ export interface ServerToClientEvents {
     username: string
     isTyping: boolean
   }) => void
+  'increment connection count': () => void
 }
 
 export interface InterServerEvents {

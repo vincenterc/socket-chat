@@ -3,8 +3,10 @@
 import {
   ChangeEvent,
   createContext,
+  Dispatch,
   FormEvent,
   ReactNode,
+  SetStateAction,
   useContext,
   useEffect,
   useState,
@@ -24,6 +26,7 @@ interface Chat {
   to: string
   toggleConnBtnText: string
   typings: string[]
+  setUsers: Dispatch<SetStateAction<User[]>>
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void
   handleSubmit: (e: FormEvent<HTMLFormElement>) => void
   handleToggleConnBtnClick: (
@@ -93,17 +96,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const onChatMessage = (msg: Message, serverOffset: number) => {
       setMessages((prev) => [...prev, msg])
       socket.auth = { ...socket.auth, serverOffset }
-      // TODO display having new messages
-      // if (msg.to) {
-      //   const index = users.findIndex((u) => u.name === msg.from)
-      //   if (index !== -1) {
-      //     setUsers((prev) => [
-      //       ...prev.slice(0, index),
-      //       { ...prev[index], hasNewMessage: msg.from !== to },
-      //       ...prev.slice(index + 1),
-      //     ])
-      //   }
-      // }
+
+      if (msg.to && socket.auth.connectionCount > 0) {
+        const index = users.findIndex((u) => u.name === msg.from)
+        if (index !== -1) {
+          setUsers((prev) => [
+            ...prev.slice(0, index),
+            { ...prev[index], hasNewMessage: msg.from !== to },
+            ...prev.slice(index + 1),
+          ])
+        }
+      }
     }
 
     const onTyping = ({
@@ -120,12 +123,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    const onIncrementConnectionCount = () =>
+      (socket.auth = {
+        ...socket.auth,
+        connectionCount:
+          (socket.auth as { [key: string]: any }).connectionCount + 1,
+      })
+
     socket.on('connect_error', onConnectError)
     socket.on('user connect', onUserConnect)
     socket.on('user disconnect', onUserDisconnect)
     socket.on('users', onUsers)
     socket.on('chat message', onChatMessage)
     socket.on('typing', onTyping)
+    socket.on('increment connection count', onIncrementConnectionCount)
 
     return () => {
       socket.off('connect_error')
@@ -134,6 +145,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       socket.off('users')
       socket.off('chat message')
       socket.off('typing', onTyping)
+      socket.off('increment connection count', onIncrementConnectionCount)
     }
   }, [username, users, typings, to])
 
@@ -192,6 +204,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         to,
         toggleConnBtnText,
         typings,
+        setUsers,
         handleChange,
         handleSubmit,
         handleToggleConnBtnClick,

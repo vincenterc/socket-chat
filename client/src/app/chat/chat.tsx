@@ -16,6 +16,7 @@ export function Chat() {
     to,
     toggleConnBtnText,
     typings,
+    setUsers,
     handleChange,
     handleSubmit,
     handleToggleConnBtnClick,
@@ -26,20 +27,16 @@ export function Chat() {
     msgListRef.current?.scrollTo(0, msgListRef.current.scrollHeight)
   }, [messages, typings])
 
-  // TODO not display having new messages
-  // const handleClickUserItem = (username: string) => () => {
-  //   setTo(username)
-  //   if (username) {
-  //     const index = users.findIndex((u) => u.name === username)
-  //     if (index !== -1 && users[index].hasNewMessage) {
-  //       setUsers((prev) =>
-  //         prev.map((u) =>
-  //           u.name === username ? { ...u, hasNewMessage: false } : u,
-  //         ),
-  //       )
-  //     }
-  //   }
-  // }
+  const handleClickLink = (username: string) => () => {
+    const index = users.findIndex((u) => u.name === username)
+    if (index !== -1 && users[index].hasNewMessage) {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.name === username ? { ...u, hasNewMessage: false } : u,
+        ),
+      )
+    }
+  }
 
   return (
     <div className="h-screen flex">
@@ -63,6 +60,7 @@ export function Chat() {
                   <li key={`${u}-${i}`}>
                     <Link
                       href={`/chat/${u.name}`}
+                      onClick={handleClickLink(u.name)}
                       className="mt-2 py-2 px-4 bg-gray-600 rounded-2xl flex justify-between items-center text-white text-xl hover:cursor-pointer hover:bg-gray-700"
                     >
                       {u.name}

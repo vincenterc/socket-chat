@@ -194,6 +194,7 @@ if (cluster.isPrimary) {
         // something went wrong
       }
     }
+    socket.emit('increment connection count')
   })
 
   io.on('user connect', (username: string) => {
